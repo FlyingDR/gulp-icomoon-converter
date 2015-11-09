@@ -15,5 +15,11 @@
     "icomoon"
   ],
   "author": "Alexander Grimalovsky",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "gulp-util": "^3.0.7",
+    "handlebars": "^4.0.4",
+    "merge": "^1.2.0",
+    "through2": "^2.0.0"
+  }
 }
