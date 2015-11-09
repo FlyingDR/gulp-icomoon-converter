@@ -31,12 +31,12 @@ Filter function to decide what icon sets should be includes into resulted file. 
 Type ```Function```
 Filter function to decide what icons should be includes into resulted file. Receives ```Object``` with following information: 
  - ```icon``` - Information about icon itself, example can be seen by path like ```iconSets[0].icons[0]``` into IcoMoon configuration file
- - ```selection``` - Information about icon selection properties, example can be seen by path like ```iconSets[0].selection[0]``` into IcoMoon configuration file.
+ - ```properties``` - Information about icon selection properties, example can be seen by path like ```iconSets[0].selection[0]``` into IcoMoon configuration file.
 Should return ```Boolean```.
 By default all icons are accepted, if you want to accept only selected icons - you can pass following function as icon filter: 
 ```js
 function(info) {
-  return info.selection.order > 0;
+  return info.properties.order > 0;
 }
 ```
 

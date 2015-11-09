@@ -29,8 +29,8 @@ module.exports = function (opts) {
             iconFilter: undefined,
             transform: function (info) {
                 return {
-                    name: info.selection.name || undefined,
-                    code: '\\' + Number(info.selection.code || 0).toString(16)
+                    name: info.properties.name || undefined,
+                    code: '\\' + Number(info.properties.code || 0).toString(16)
                 };
             }
         }, opts);
@@ -63,7 +63,7 @@ module.exports = function (opts) {
             (icomoon.icons || []).forEach(function (icon) {
                 var info = {
                     icon: icon.icon,
-                    selection: icon.selection
+                    properties: icon.properties
                 };
                 if (iconFilter(info)) {
                     vars.icons.push(options.transform(info));
@@ -77,7 +77,7 @@ module.exports = function (opts) {
                     do {
                         info = {
                             icon: iconSet.icons.shift(),
-                            selection: iconSet.selection.shift()
+                            properties: iconSet.selection.shift()
                         };
                         if (iconFilter(info)) {
                             vars.icons.push(options.transform(info));
