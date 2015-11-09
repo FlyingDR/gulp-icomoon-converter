@@ -1,6 +1,6 @@
 {
   "name": "gulp-icomoon-converter",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Template-based converter for IcoMoon project file",
   "main": "index.js",
   "scripts": {
