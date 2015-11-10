@@ -30,7 +30,7 @@ module.exports = function (opts) {
             transform: function (info) {
                 return {
                     name: info.properties.name || undefined,
-                    code: '\\' + Number(info.properties.code || 0).toString(16)
+                    code: Number(info.properties.code || 0).toString(16)
                 };
             }
         }, opts);
@@ -50,6 +50,7 @@ module.exports = function (opts) {
         }
         vars = merge(options.templateVars || {}, {
             prefix: (options.prefix !== undefined) ? options.prefix : icomoon.preferences.imagePref.prefix,
+            backslash: '\\',
             icons: []
         });
         iconSetFilter = (typeof options.iconSetFilter === 'function') ? options.iconSetFilter : function () {

@@ -8,6 +8,7 @@ Plugin behavior is controlled by following options
 Type ```String```
 Template to use for conversion. Plugin uses [Handlebars](http://handlebarsjs.com/) as template engine. Default template converts icons into list of SCSS variables. By default template receives only two variables:
  - ```prefix``` - prefix for icon names, either [given explicitly](./README.md#prefix) or taken from IcoMoon configuration
+ - ```backslash``` - backslash symbol (```\```) to use in template and avoid unnecessary quoting
  - ```icons``` - array of information about icons. Each entry contains ```name``` and ```code``` properties.
 However it can be changed by providing [custom template vars](./README.md#templateVars) or even [custom information transformer](./README.md#transform).
 
