@@ -24,12 +24,19 @@ module.exports = function (opts) {
             template: __dirname + '/template/icomoon-icons.mustache',
             templateVars: {},
             prefix: undefined,
+            separator: undefined,
             filename: '_icomoon-icons.scss',
             iconSetFilter: undefined,
             iconFilter: undefined,
             transform: function (info) {
+                var name = info.properties.name || undefined;
+                name = name.split(',').shift().trim().toLowerCase();
+                if (options.separator !== undefined) {
+                    //noinspection JSLint
+                    name = name.replace(/[^a-z0-9]+/g, options.separator);
+                }
                 return {
-                    name: info.properties.name || undefined,
+                    name: name,
                     code: Number(info.properties.code || 0).toString(16)
                 };
             }
