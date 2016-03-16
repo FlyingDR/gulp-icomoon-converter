@@ -20,6 +20,10 @@ Additional variables to pass to template for rendering.
 Type ```String```
 Prefix for icon names. If not defined - prefix will be taken from IcoMoon configuration file.
 
+## separator
+Type ```String```
+Separator between words into icon names. Useful if icon names have inconsistent names into Icomoon (for example `my-icon` and `another_icon`) but you want them to be consistent into SCSS. This option is used only inside default [transformer](./README.md#transform) so it will stop working in a case if custom information transformer is provided. 
+
 ## filename
 Type ```String```
 Name of target file.
