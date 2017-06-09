@@ -23,7 +23,6 @@ module.exports = function (opts) {
         var options = merge({
             template: 'icons-as-vars.scss',
             templateVars: {},
-            prefix: undefined,
             separator: undefined,
             filename: '_font-icons',
             iconSetFilter: undefined,
@@ -60,6 +59,23 @@ module.exports = function (opts) {
                 });
             }
             if (template) {
+                // Check if we have any built-in parameters in template
+                if (template.match(/^---$/m)) {
+                    var params = template.split(/^---[\r\n]*/m, 2);
+                    template = params.pop();
+                    var tplParams = {} ;
+                    params.shift().split(/[\r\n]+/).forEach(function (param) {
+                        var p = param.split(':', 2);
+                        var name = p.shift();
+                        if (typeof name === 'string' && name.length) {
+                            var value = p.shift();
+                            if (typeof value === 'string') {
+                                tplParams[name] = value.trim();
+                            }
+                        }
+                    });
+                    options.templateVars = merge(true, tplParams, options.templateVars);
+                }
                 try {
                     template = handlebars.compile(template);
                 } catch (e) {
@@ -88,7 +104,6 @@ module.exports = function (opts) {
         // Prepare template file variables
         //noinspection JSUnresolvedVariable
         var vars = merge.recursive(true, {
-            prefix: options.prefix !== undefined ? options.prefix : icomoon.preferences.fontPref.prefix,
             icons: [],
             chars: {
                 backslash: '\\',
