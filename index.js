@@ -15,93 +15,159 @@ module.exports = function (opts) {
             return cb(null, file);
         }
         if (file.isStream()) {
-            return cb(new PluginError(PLUGIN_NAME, 'Streaming not supported'));
+            return cb(new PluginError(PLUGIN_NAME, 'Streaming is not supported'));
         }
 
-        var options, icomoon, vars, template, iconSetFilter, iconFilter;
-        //noinspection JSUnusedLocalSymbols,JSLint
-        options = merge({
-            template: __dirname + '/template/icomoon-icons.mustache',
+        var icomoon, template;
+        //noinspection JSUnusedLocalSymbols
+        var options = merge({
+            template: 'icons-as-vars.scss',
             templateVars: {},
             prefix: undefined,
             separator: undefined,
-            filename: '_icomoon-icons.scss',
+            filename: '_font-icons.scss',
             iconSetFilter: undefined,
             iconFilter: undefined,
-            transform: function (info) {
-                var name = info.properties.name || undefined;
-                name = name.split(',').shift().trim().toLowerCase();
-                if (options.separator !== undefined) {
-                    //noinspection JSLint
-                    name = name.replace(/[^a-z0-9]+/g, options.separator);
-                }
-                return {
-                    name: name,
-                    code: Number(info.properties.code || 0).toString(16)
-                };
-            }
+            transform: undefined
         }, opts);
-        if (options.template === undefined) {
-            return cb(new PluginError(PLUGIN_NAME, 'No template is defined'));
+
+        // Prepare template transformation function
+        if (typeof options.template === 'function') {
+            // Template is given as transformation function 
+            template = options.template;
+        } else if (typeof options.template === 'string') {
+            // This is some kind of template
+            if (options.template.indexOf('{') !== -1) {
+                // Template is given explicitly
+                template = options.template;
+            } else {
+                [
+                    options.template,
+                    __dirname + '/templates/' + options.template + '.hbs'
+                ].forEach(function (path) {
+                    if (!template) {
+                        try {
+                            fs.accessSync(path, fs.R_OK);
+                            template = fs.readFileSync(path).toString();
+                        } catch (e) {
+                        }
+                    }
+                });
+            }
+            if (template) {
+                try {
+                    template = handlebars.compile(template);
+                } catch (e) {
+                    return cb(new PluginError(PLUGIN_NAME, 'Failed to compile template, please check if it is valid Handlebars template'));
+                }
+            } else {
+                return cb(new PluginError(PLUGIN_NAME, 'Given font icons list template is either missed or unreadable'));
+            }
+        } else {
+            return cb(new PluginError(PLUGIN_NAME, 'Font icons list template should be given either as filename, name of pre-defined template, explicit template or transformation function'));
         }
-        try {
-            //noinspection JSLint
-            fs.accessSync(options.template, fs.R_OK);
-        } catch (e) {
-            return cb(new PluginError(PLUGIN_NAME, 'Given template file is either missed ot unreadable'));
-        }
+
+        // Load icomoon.io project file 
         try {
             icomoon = JSON.parse(file.contents.toString(enc));
         } catch (e) {
-            return cb(new PluginError(PLUGIN_NAME, 'Failed to parse IcoMoon JSON: ' + e.message));
-        }
-        vars = merge(options.templateVars || {}, {
-            prefix: (options.prefix !== undefined) ? options.prefix : icomoon.preferences.imagePref.prefix,
-            backslash: '\\',
-            icons: []
-        });
-        iconSetFilter = (typeof options.iconSetFilter === 'function') ? options.iconSetFilter : function () {
-            return true;
-        };
-        iconFilter = (typeof options.iconFilter === 'function') ? options.iconFilter : function () {
-            return true;
-        };
-        //noinspection JSUnresolvedVariable
-        if ((icomoon.IcoMoonType || false) === 'selection') {
-            (icomoon.icons || []).forEach(function (icon) {
-                var info = {
-                    icon: icon.icon,
-                    properties: icon.properties
-                };
-                if (iconFilter(info)) {
-                    vars.icons.push(options.transform(info));
-                }
-            });
-        } else {
-            //noinspection JSUnresolvedVariable
-            (icomoon.iconSets || []).forEach(function (iconSet) {
-                if (iconSetFilter(iconSet)) {
-                    var info;
-                    do {
-                        info = {
-                            icon: iconSet.icons.shift(),
-                            properties: iconSet.selection.shift()
-                        };
-                        if (iconFilter(info)) {
-                            vars.icons.push(options.transform(info));
-                        }
-                    } while (iconSet.icons.length);
-                }
-            });
+            return cb(new PluginError(PLUGIN_NAME, 'Failed to parse IcoMoon project file: ' + e.message));
         }
 
-        //noinspection JSUnresolvedFunction,JSLint
-        template = handlebars.compile(fs.readFileSync(options.template).toString());
+        // Perform basic validation of project file structure validity
+        //noinspection JSUnresolvedVariable
+        if (!Array.isArray(icomoon.iconSets) || typeof icomoon.preferences !== 'object') {
+            return cb(new PluginError(PLUGIN_NAME, 'IcoMoon project file is either corrupted or have unsupported format'));
+        }
+
+        // Prepare template file variables
+        //noinspection JSUnresolvedVariable
+        var vars = merge({}, {
+            prefix: options.prefix !== undefined ? options.prefix : icomoon.preferences.fontPref.prefix,
+            icons: [],
+            chars: {
+                backslash: '\\',
+                openBracket: '{',
+                closeBracket: '}'
+            }
+        }, options.templateVars || {});
+
+        // Prepare filtering functions
+        var iconSetFilter = typeof options.iconSetFilter === 'function' ? options.iconSetFilter : function () {
+            return true;
+        };
+        var iconFilter = typeof options.iconFilter === 'function' ? options.iconFilter : function () {
+            return true;
+        };
+
+        // Prepare icon information transformer
+        var haveIcons = false, haveIconCode = false;
+        var defaultTransformer = function (info, options) {
+            var name = info.properties.name || undefined;
+            name = name.split(',').shift().trim().toLowerCase();
+            if (options.separator !== undefined) {
+                name = name.replace(/[^a-z0-9]+/g, options.separator);
+            }
+            var code = info.properties.code;
+            haveIcons = true;
+            haveIconCode |= code !== undefined;
+            return {
+                name: name,
+                code: Number(code || 0).toString(16)
+            };
+        };
+        var iconTransformer = defaultTransformer;
+        if (typeof options.transform === 'function') {
+            iconTransformer = options.transform;
+        }
+
+        // Transform icomoon.io icons information into template variables information
+        //noinspection JSUnresolvedVariable
+        (icomoon.iconSets || []).forEach(function (iconSet) {
+            if (typeof iconSet !== 'object' || !Array.isArray(iconSet.icons) || !Array.isArray(iconSet.selection)) {
+                return;
+            }
+            if (iconSetFilter(iconSet, options)) {
+                var info;
+                do {
+                    info = {
+                        icon: iconSet.icons.shift(),
+                        properties: iconSet.selection.shift()
+                    };
+                    if (iconFilter(info, options)) {
+                        if (!Array.isArray(vars.icons)) {
+                            vars.icons = [];
+                        }
+                        vars.icons.push(iconTransformer(info, options));
+                    }
+                } while (iconSet.icons.length);
+            }
+        });
+
+        // Check for common problems with resulted set of icons
+        if (iconTransformer === defaultTransformer) {
+            // We can detected missed icons or unassigned char codes only if we use default transformer
+            if (!haveIcons) {
+                return cb(new PluginError(PLUGIN_NAME, 'Either no font icons are available or they\'re filtered out, please check your project and settings'));
+            } else if (!haveIconCode) {
+                return cb(new PluginError(PLUGIN_NAME, 'No char codes are assigned to font icons. Make sure that you have generated icon font before downloading project file'));
+            }
+        }
+
+        // Generate resulted file from template and variables
+        try {
+            var result = template(vars);
+        } catch (e) {
+            return cb(new PluginError(PLUGIN_NAME, 'Error occurs while running transforming icons into file: ' + e.message));
+        }
+
+        // Pass it for further processing by Gulp
+        //noinspection JSUnresolvedFunction
         cb(null, new gutil.File({
             cwd: file.cwd,
             base: file.base,
             path: file.base + options.filename,
-            contents: new Buffer(template(vars))
+            contents: new Buffer(result)
         }));
     });
 };
