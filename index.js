@@ -63,12 +63,12 @@ module.exports = function (opts) {
                 if (template.match(/^---$/m)) {
                     var params = template.split(/^---[\r\n]*/m, 2);
                     template = params.pop();
-                    var tplParams = {} ;
+                    var tplParams = {};
                     params.shift().split(/[\r\n]+/).forEach(function (param) {
-                        var p = param.split(':', 2);
+                        var p = param.split(':', 1);
                         var name = p.shift();
                         if (typeof name === 'string' && name.length) {
-                            var value = p.shift();
+                            var value = param.substr(name.length + 1);
                             if (typeof value === 'string') {
                                 tplParams[name] = value.trim();
                             }
