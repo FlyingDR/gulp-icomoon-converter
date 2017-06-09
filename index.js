@@ -21,7 +21,7 @@ module.exports = function (opts) {
         var icomoon, template;
         //noinspection JSUnusedLocalSymbols
         var options = merge({
-            template: 'icons-as-vars.scss',
+            template: 'icons.scss',
             templateVars: {},
             separator: undefined,
             filename: '_font-icons',
