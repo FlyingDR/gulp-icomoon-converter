@@ -1,6 +1,6 @@
 {
   "name": "gulp-icomoon-converter",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Template-based converter for IcoMoon project file",
   "main": "index.js",
   "scripts": {
@@ -12,6 +12,7 @@
   },
   "keywords": [
     "gulpplugin",
+    "font icon",
     "icomoon"
   ],
   "author": "Alexander Grimalovsky",
