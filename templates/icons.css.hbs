@@ -1,0 +1,6 @@
+scope: :root
+namePrefix: icon-
+---
+{{scope}} {{chars.openBracket}}{{#icons}}
+  --{{../namePrefix}}{{name}}: '{{../chars.backslash}}{{code}}';{{/icons}}
+{{chars.closeBracket}}
