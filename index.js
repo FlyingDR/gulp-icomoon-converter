@@ -25,7 +25,7 @@ module.exports = function (opts) {
             templateVars: {},
             prefix: undefined,
             separator: undefined,
-            filename: '_font-icons.scss',
+            filename: '_font-icons',
             iconSetFilter: undefined,
             iconFilter: undefined,
             transform: undefined
@@ -44,11 +44,16 @@ module.exports = function (opts) {
                 [
                     options.template,
                     __dirname + '/templates/' + options.template + '.hbs'
-                ].forEach(function (path) {
+                ].forEach(function (fp) {
                     if (!template) {
                         try {
-                            fs.accessSync(path, fs.R_OK);
-                            template = fs.readFileSync(path).toString();
+                            fs.accessSync(fp, fs.R_OK);
+                            template = fs.readFileSync(fp).toString();
+                            var ext = options.template.split('.').pop();
+                            // Built-in template is used and output filename have no extension - use one defined by template
+                            if (fp.match(new RegExp('\\.' + ext + '\\.hbs$')) && options.filename.indexOf('.') === -1) {
+                                options.filename += '.' + ext;
+                            }
                         } catch (e) {
                         }
                     }
@@ -82,7 +87,7 @@ module.exports = function (opts) {
 
         // Prepare template file variables
         //noinspection JSUnresolvedVariable
-        var vars = merge({}, {
+        var vars = merge.recursive(true, {
             prefix: options.prefix !== undefined ? options.prefix : icomoon.preferences.fontPref.prefix,
             icons: [],
             chars: {
@@ -90,7 +95,7 @@ module.exports = function (opts) {
                 openBracket: '{',
                 closeBracket: '}'
             }
-        }, options.templateVars || {});
+        }, typeof options.templateVars === 'object' ? options.templateVars : {});
 
         // Prepare filtering functions
         var iconSetFilter = typeof options.iconSetFilter === 'function' ? options.iconSetFilter : function () {
