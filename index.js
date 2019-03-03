@@ -1,6 +1,7 @@
 'use strict';
 
 var fs = require('fs');
+var path = require('path');
 var gutil = require('gulp-util');
 var through = require('through2');
 var handlebars = require('handlebars');
@@ -185,7 +186,7 @@ module.exports = function (/** IcomoonConverterOptions*/opts) {
         cb(null, new gutil.File({
             cwd: file.cwd,
             base: file.base,
-            path: file.base + options.filename,
+            path: path.resolve(file.base, options.filename),
             contents: new Buffer(result)
         }));
     });
